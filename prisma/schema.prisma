@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  userId        Int         @id @default(autoincrement()) @map("user_id")
+  email         String      @unique @map("email")
+  password      String      @map("password")
+  name          String      @map("name")
+  nickname      String      @map("nickname")
+  phoneNumber   String      @map("phone_number")
+  role          Role        @default(USER) @map("role")
+  cityAddress   String      @map("city_address")
+  streetAddress String      @map("street_address")
+  detailAddress String      @map("detail_address")
+  isEmailValid  Boolean     @default(false) @map("is_email_valid")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  Point         Point?
+  Restaurant    Restaurant?
+  Cart          Cart?
+  Order         Order[]
+  Review        Review[]
+  Token         Token?
+
+  @@map("users")
+}
+
+enum Role {
+  USER
+  OWNER
+  ADMIN
+}
+
+model Point {
+  pointId   Int        @unique @default(autoincrement()) @map("point_id")
+  userId    Int        @unique @map("user_id")
+  point     Int        @map("point")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  User      User       @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  PointLog  PointLog[]
+
+  @@map("points")
+}
+
+model PointLog {
+  logId     Int      @unique @default(autoincrement()) @map("log_id")
+  userId    Int      @map("user_id")
+  point     Int      @map("point")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  Point     Point    @relation(fields: [userId], references: [userId])
+
+  @@map("point_logs")
+}
+
+model Restaurant {
+  restaurantId          Int      @id @default(autoincrement()) @map("restaurant_id")
+  ownerId               Int      @unique @map("owner_id")
+  name                  String   @map("name")
+  phoneNumber           String   @map("phone_number")
+  cityAddress           String   @map("city_address")
+  streetAddress         String   @map("street_address")
+  detailAddress         String   @map("detail_address")
+  mainMenuType          String   @map("main_menu_type")
+  deliveryAvailableArea String   @map("delivery_available_area")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  User                  User     @relation(fields: [ownerId], references: [userId])
+  Menu                  Menu[]
+  Order                 Order[]
+  Review                Review[]
+
+  @@map("restaurants")
+}
+
+model Menu {
+  menuId          Int           @id @default(autoincrement()) @map("menu_id")
+  restaurantId    Int           @map("restaurant_id")
+  menuName        String        @map("menu_name")
+  menuImageUrl    String        @map("menu_image_url")
+  menuPrice       Int           @map("menu_price")
+  menuType        Int           @map("menu_type")
+  menuDescription String        @map("menu_description")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  Restaurant      Restaurant    @relation(fields: [restaurantId], references: [restaurantId], onDelete: Cascade)
+  CartDetail      CartDetail[]
+  OrderDetail     OrderDetail[]
+
+  @@map("menus")
+}
+
+model Cart {
+  cartId       Int          @id @default(autoincrement()) @map("cart_id")
+  userId       Int          @unique @map("user_id")
+  restaurantId Int?         @map("restaurant_id")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  User         User         @relation(fields: [userId], references: [userId])
+  CartDetail   CartDetail[]
+
+  @@map("carts")
+}
+
+model CartDetail {
+  cartDetailId Int      @id @default(autoincrement()) @map("cart_detail_id")
+  cartId       Int      @map("cart_id")
+  menuId       Int      @map("menu_id")
+  menuCount    Int      @map("menu_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  Cart         Cart     @relation(fields: [cartId], references: [cartId], onDelete: Cascade)
+  Menu         Menu     @relation(fields: [menuId], references: [menuId], onDelete: Cascade)
+
+  @@map("cart_details")
+}
+
+model Order {
+  orderId        Int           @id @default(autoincrement()) @map("order_id")
+  userId         Int           @map("user_id")
+  restaurantId   Int           @map("restaurant_id")
+  userRequirment String        @map("user_requirment")
+  orderStatus    OrderStatus   @default(READY) @map("order_status")
+  totalPrice     Int           @map("total_price")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  User           User          @relation(fields: [userId], references: [userId])
+  Restaurant     Restaurant    @relation(fields: [restaurantId], references: [restaurantId])
+  OrderDetail    OrderDetail[]
+  Review         Review[]
+
+  @@map("orders")
+}
+
+enum OrderStatus {
+  READY
+  DONE
+}
+
+model OrderDetail {
+  orderDetailId Int      @id @default(autoincrement()) @map("order_detail_id")
+  orderId       Int      @map("order_id")
+  menuId        Int      @map("menu_id")
+  menuPrice     Int      @map("menu_price")
+  menuCount     Int      @map("menu_count")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  Order         Order    @relation(fields: [orderId], references: [orderId], onDelete: Cascade)
+  Menu          Menu     @relation(fields: [menuId], references: [menuId], onDelete: Cascade)
+
+  @@map("order_details")
+}
+
+model Review {
+  reviewId     Int        @id @default(autoincrement()) @map("review_id")
+  userId       Int        @map("user_id")
+  orderId      Int        @map("order_id")
+  restaurantId Int        @map("restaurant_id")
+  score        Int        @map("score")
+  review       String     @map("review")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  User         User       @relation(fields: [userId], references: [userId])
+  Order        Order      @relation(fields: [orderId], references: [orderId])
+  Restaurant   Restaurant @relation(fields: [restaurantId], references: [restaurantId], onDelete: Cascade)
+  Image        Image[]
+
+  @@map("reviews")
+}
+
+model Image {
+  imageId   Int      @id @default(autoincrement()) @map("image_id")
+  reviewId  Int      @map("review_id")
+  imageUrl  String   @map("image_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  Review    Review   @relation(fields: [reviewId], references: [reviewId], onDelete: Cascade)
+
+  @@map("images")
+}
+
+model Token {
+  tokenId      Int      @id @default(autoincrement()) @map("token_id")
+  userId       Int      @unique @map("user_id")
+  refreshToken String   @map("refresh_token")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  User User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("tokens")
+}
